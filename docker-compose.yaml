@@ -16,6 +16,6 @@ services:
     ports:
       - 3000:3000/tcp
     volumes:
-      - ./paleo-geomap-panel:/var/lib/grafana/plugins/paleo-geomap-panel
+      - ../../builds:/var/lib/grafana/plugins
       - ./provisioning/datasources:/etc/grafana/provisioning/datasources
       - ./provisioning/dashboards:/etc/grafana/provisioning/dashboards

@@ -26,6 +26,8 @@ export const CustomWMTSBasemapEditor = ({ value, onChange }: Props) => {
   const [attribution, setAttribution] = useState<string>(value?.attribution ?? '');
   const [opacity, setOpacity] = useState<number>(value?.opacity ?? 1);
   const [showLegend, setShowLegend] = useState<boolean>(value?.showLegend ?? false);
+  const [username, setUsername] = useState<string>(value?.username ?? '');
+  const [password, setPassword] = useState<string>(value?.password ?? '');
 
   const [options, setOptions] = useState<Array<SelectableValue<string>>>([]);
   const [selection, setSelection] = useState<SelectableValue<string> | null>(
@@ -52,6 +54,8 @@ export const CustomWMTSBasemapEditor = ({ value, onChange }: Props) => {
       attribution,
       opacity,
       showLegend,
+      username,
+      password,
     });
   };
 
@@ -71,7 +75,7 @@ export const CustomWMTSBasemapEditor = ({ value, onChange }: Props) => {
       return;
     }
 
-    getWMTSCapabilitiesFromService(url)
+    getWMTSCapabilitiesFromService(url, username, password)
       .then((node) => {
         const layers = getWMTSLayers(node);
         cacheRef.current[url] = layers;
@@ -122,6 +126,8 @@ export const CustomWMTSBasemapEditor = ({ value, onChange }: Props) => {
             attribution,
             opacity,
             showLegend,
+            username,
+            password,
           });
         }}
       />
@@ -154,7 +160,9 @@ export const CustomWMTSBasemapEditor = ({ value, onChange }: Props) => {
                 },
                 attribution: attribution,
                 opacity: opacity,
-                showLegend: e.currentTarget.checked
+                showLegend: e.currentTarget.checked,
+                username,
+                password,
               });
             }}
           />
@@ -173,6 +181,26 @@ export const CustomWMTSBasemapEditor = ({ value, onChange }: Props) => {
           />
         </Field>
       }
+
+      {/* Authentication */}
+      <Field label="Username (optional)" description="Username for Basic HTTP Authentication">
+        <Input
+          value={username}
+          aria-label="wmts-username-input"
+          type="text"
+          onChange={(e) => setUsername(e.currentTarget.value)}
+          onBlur={emitChange}
+        />
+      </Field>
+      <Field label="Password (optional)" description="Password for Basic HTTP Authentication">
+        <Input
+          value={password}
+          aria-label="wmts-password-input"
+          type="password"
+          onChange={(e) => setPassword(e.currentTarget.value)}
+          onBlur={emitChange}
+        />
+      </Field>
     </div>
   );
 };

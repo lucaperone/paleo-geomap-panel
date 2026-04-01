@@ -79,7 +79,7 @@ export const MultipleWMSEditor = ({ item, value, onChange, context }: Props) => 
         <>
             {wmsEditors}
             <Button aria-label="wms add button" size="sm" variant="primary" icon="plus" type="button" onClick={() => {
-                onChange(value ? [...value, {id: uuidv4(), url: "", layers: [], attribution: "", opacity: 1.0, showLegend: false}] : [{id: uuidv4(), url: "", layers: [], attribution: "", opacity: 1.0, showLegend: false}]);
+                onChange(value ? [...value, {id: uuidv4(), url: "", layers: [], attribution: "", opacity: 1.0, showLegend: false, username: '', password: ''}] : [{id: uuidv4(), url: "", layers: [], attribution: "", opacity: 1.0, showLegend: false, username: '', password: ''}]);
             }}>Add WMS</Button>
         </>
         );

@@ -10,7 +10,7 @@ import { ExtendMapLayerOptions, ExtendMapLayerRegistryItem } from 'extension';
 import { MultipleWMSEditor } from 'editor/MultipleWMSEditor';
 import LayerGroup from 'ol/layer/Group';
 import BaseLayer from 'ol/layer/Base';
-import { getWMSCapabilitiesFromService, getProjection, getWMSGetLegendURL, appendCustomQueryParameters } from 'mapServiceHandlers/wms';
+import { getWMSCapabilitiesFromService, getProjection, getWMSGetLegendURL, appendCustomQueryParameters, createAuthHeaders } from 'mapServiceHandlers/wms';
 import { LegendItem, WMSLegend } from 'mapcontrols/WMSLegend';
 // import { lastGeomapPanelInstance } from 'GeomapPanel';
 
@@ -30,7 +30,9 @@ export interface WMSConfig {
     layers: WMSTuple[],
     opacity: number,
     attribution: string,
-    showLegend: boolean
+    showLegend: boolean,
+    username?: string,
+    password?: string
 }
 
 export interface WMSBaselayerConfig {
@@ -72,7 +74,7 @@ export const wms: ExtendMapLayerRegistryItem<WMSBaselayerConfig> = {
         // This happens in edit mode when the WMS url changes
         // This will fail if the panel is opened in edit mode for the first time
         try {
-          xmlNodeWMS = await getWMSCapabilitiesFromService(wmsItem.url as string);
+          xmlNodeWMS = await getWMSCapabilitiesFromService(wmsItem.url as string, wmsItem.username, wmsItem.password);
           epsgCode = await getProjection(xmlNodeWMS!) as string;
         } catch (error) {
           epsgCode = "EPSG:3857";
@@ -80,14 +82,29 @@ export const wms: ExtendMapLayerRegistryItem<WMSBaselayerConfig> = {
         }
 
         if (selectedWmsLayers.length !== 0) {
-          const wmsSource = new ImageWMS({
+          const authHeaders = createAuthHeaders(wmsItem.username, wmsItem.password);
+          const hasAuth = wmsItem.username && wmsItem.password;
+
+          const wmsSourceOptions: any = {
             url: wmsItem.url as string,
             params: {"LAYERS": selectedWmsLayers.map(el => el.name).join(',')},
             ratio: 1,
             crossOrigin: 'anonymous', // https://developer.mozilla.org/en-US/docs/Web/HTML/CORS_enabled_image
             attributions: wmsItem.attribution ? wmsItem.attribution : "",
             projection: epsgCode
-          });
+          };
+
+          if (hasAuth) {
+            wmsSourceOptions.imageLoadFunction = (image: any, src: string) => {
+              fetch(src, { headers: authHeaders })
+                .then((response) => response.blob())
+                .then((blob) => {
+                  image.getImage().src = URL.createObjectURL(blob);
+                });
+            };
+          }
+
+          const wmsSource = new ImageWMS(wmsSourceOptions);
           layers.push(
             new ImageLayer({
               source: wmsSource,
@@ -97,27 +114,37 @@ export const wms: ExtendMapLayerRegistryItem<WMSBaselayerConfig> = {
 
           if (wmsItem.showLegend){
             const wmsURL = wmsSource.getUrl();
-            selectedWmsLayers.forEach((value) => {
+            for (const layerValue of selectedWmsLayers) {
               let wmsLegendURL;
               try {
                 // Append custom query parameters to legend urls
-                wmsLegendURL = getWMSGetLegendURL(xmlNodeWMS!, value.name);
+                wmsLegendURL = getWMSGetLegendURL(xmlNodeWMS!, layerValue.name);
                 wmsLegendURL = appendCustomQueryParameters(
-                    wmsLegendURL ?? "", 
+                    wmsLegendURL ?? "",
                     new URL(wmsURL!).searchParams
                   );
               } catch (error) {
                 wmsLegendURL = wmsLegendURL ?? "";
               }
+
+              // If authenticated, fetch legend via auth and convert to blob URL
+              if (hasAuth && wmsLegendURL) {
+                try {
+                  const response = await fetch(wmsLegendURL, { headers: authHeaders });
+                  const blob = await response.blob();
+                  wmsLegendURL = URL.createObjectURL(blob);
+                } catch (error) {
+                  // Fall back to direct URL
+                }
+              }
+
               legendItems.push(
                 {
-                  label: value.title,
-                  // Append custom query parameters to legend urls
+                  label: layerValue.title,
                   url: wmsLegendURL
                 }
               )
             }
-            );
           }
         }
       }

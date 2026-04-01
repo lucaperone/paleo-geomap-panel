@@ -8,10 +8,12 @@ import { ExtendMapLayerOptions, ExtendMapLayerRegistryItem } from 'extension';
 // import { MultipleWMSEditor } from 'editor/MultipleWMSEditor';
 import LayerGroup from 'ol/layer/Group';
 import BaseLayer from 'ol/layer/Base';
-import { addCustomParametersToWMTSOptionsURLs, getWMTSCapabilitiesFromService,/*, getProjection, buildWMSGetLegendURL*/ 
+import { addCustomParametersToWMTSOptionsURLs, getWMTSCapabilitiesFromService,/*, getProjection, buildWMSGetLegendURL*/
 getWMTSLegendURLForLayer, appendCustomQueryParameters,
 registerCRSInProj4,
-removeQueryParameters} from 'mapServiceHandlers/wmts';
+removeQueryParameters,
+createAuthHeaders} from 'mapServiceHandlers/wmts';
+import ImageTile from 'ol/ImageTile';
 import { LegendItem, WMSLegend } from 'mapcontrols/WMSLegend';
 import TileLayer from 'ol/layer/Tile';
 import { WMTS } from 'ol/source';
@@ -41,6 +43,8 @@ export interface WMTSConfig {
     opacity: number,
     attribution: string,
     showLegend: boolean,
+    username?: string,
+    password?: string,
 }
 
 export interface WMTSBaselayerConfig {
@@ -86,7 +90,7 @@ export const wmts: ExtendMapLayerRegistryItem<WMTSBaselayerConfig> = {
           // This happens in edit mode when the WMS url changes
           // This will fail if the panel is opened in edit mode for the first time
           try {
-            wmtsCapabilities = await getWMTSCapabilitiesFromService(wmtsItem.url as string);
+            wmtsCapabilities = await getWMTSCapabilitiesFromService(wmtsItem.url as string, wmtsItem.username, wmtsItem.password);
             await registerCRSInProj4(wmtsCapabilities);
             wmtsOptions = optionsFromCapabilities(wmtsCapabilities, {"layer": selectedWmtsLayer.identifier, "crossOrigin": "anonymous"});
           } catch (error) {
@@ -99,6 +103,19 @@ export const wmts: ExtendMapLayerRegistryItem<WMTSBaselayerConfig> = {
             } catch (error) {
 				      throw new Error(`Error updating wmts options with custom query parameters: ${error}`)
             }
+            const authHeaders = createAuthHeaders(wmtsItem.username, wmtsItem.password);
+            const hasAuth = wmtsItem.username && wmtsItem.password;
+
+            if (hasAuth) {
+              wmtsOptions.tileLoadFunction = (tile: any, src: string) => {
+                fetch(src, { headers: authHeaders })
+                  .then((response) => response.blob())
+                  .then((blob) => {
+                    ((tile as ImageTile).getImage() as HTMLImageElement).src = URL.createObjectURL(blob);
+                  });
+              };
+            }
+
             const wmtsSource = new WMTS({...wmtsOptions!, attributions: wmtsItem.attribution ?? ""});
             layers.push(
               new TileLayer({
@@ -113,12 +130,24 @@ export const wmts: ExtendMapLayerRegistryItem<WMTSBaselayerConfig> = {
                 // Append custom query parameters to legend urls
                 wmtsLegendURL = getWMTSLegendURLForLayer(wmtsCapabilities, selectedWmtsLayer.identifier);
                 wmtsLegendURL = appendCustomQueryParameters(
-                    wmtsLegendURL, 
+                    wmtsLegendURL,
                     removeQueryParameters(new URL(wmtsItem.url).searchParams)
                 );
               } catch (error) {
                 wmtsLegendURL = wmtsLegendURL ?? "";
               }
+
+              // If authenticated, fetch legend via auth and convert to blob URL
+              if (hasAuth && wmtsLegendURL) {
+                try {
+                  const response = await fetch(wmtsLegendURL, { headers: authHeaders });
+                  const blob = await response.blob();
+                  wmtsLegendURL = URL.createObjectURL(blob);
+                } catch (error) {
+                  // Fall back to direct URL
+                }
+              }
+
               legendItems.push(
                 {
                   label: selectedWmtsLayer.title,

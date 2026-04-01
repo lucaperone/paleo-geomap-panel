@@ -4,7 +4,16 @@ import { get } from 'ol/proj';
 import proj4 from "proj4";
 import { Options } from 'ol/source/WMTS';
 
-export async function getWMTSCapabilitiesFromService(wmtsGetCapabilitiesUrl: string): Promise<any> {
+export function createAuthHeaders(username?: string, password?: string): HeadersInit {
+    const headers: HeadersInit = {};
+    if (username && password) {
+        const credentials = btoa(`${username}:${password}`);
+        headers['Authorization'] = `Basic ${credentials}`;
+    }
+    return headers;
+}
+
+export async function getWMTSCapabilitiesFromService(wmtsGetCapabilitiesUrl: string, username?: string, password?: string): Promise<any> {
 
     let requestUrl: URL;
     try {
@@ -13,7 +22,8 @@ export async function getWMTSCapabilitiesFromService(wmtsGetCapabilitiesUrl: str
         throw new Error("wmtsGetCapabilitiesUrl is not a valid URL");
     }
 
-    const response: Response = await fetch(requestUrl);
+    const headers = createAuthHeaders(username, password);
+    const response: Response = await fetch(requestUrl, { headers });
 
     const parser: WMTSCapabilities = new WMTSCapabilities();
     const wmtsCapabilities = parser.read(await response.text());

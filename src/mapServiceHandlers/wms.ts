@@ -20,6 +20,15 @@ export function getFirstDirectChildNodeByLocalName(childNodes: NodeListOf<ChildN
     return childNodesList;
   }
   
+  export function createAuthHeaders(username?: string, password?: string): HeadersInit {
+    const headers: HeadersInit = {};
+    if (username && password) {
+      const credentials = btoa(`${username}:${password}`);
+      headers['Authorization'] = `Basic ${credentials}`;
+    }
+    return headers;
+  }
+
   export async function getProjDefinition(urlAsString: URL): Promise<string> {
     const response = await fetch(urlAsString);
     const projDef = await response.text();
@@ -35,12 +44,13 @@ export function getFirstDirectChildNodeByLocalName(childNodes: NodeListOf<ChildN
     return wmsCapabilitesURL;
   }
   
-  export async function getWMSCapabilitiesFromService(url: string): Promise<Node> {
+  export async function getWMSCapabilitiesFromService(url: string, username?: string, password?: string): Promise<Node> {
     // console.log(url);
     const wmsCapabilitesURL = buildGetCapabilitiesURL(url);
     // console.log(url);
-  
-      const responseCapabilities = await fetch(wmsCapabilitesURL);
+
+      const headers = createAuthHeaders(username, password);
+      const responseCapabilities = await fetch(wmsCapabilitesURL, { headers });
       const xmlCapabilities = await responseCapabilities.text();
       // console.log(xmlCapabilities);
   

@@ -1,3 +1,22 @@
+> [!NOTE]
+> ## Paleo SIGMA Fork
+>
+> **Upstream**: [felix-mu/geomap-wms-panel](https://github.com/felix-mu/geomap-wms-panel)
+>
+> ### Why we forked
+> Lizmap WMS/WMTS services require Basic HTTP Authentication. Official and community Grafana plugins cannot store credentials in panel config, so we added auth support to this WMS panel.
+>
+> ### Modifications
+> | Change | Description |
+> |--------|-------------|
+> | Basic HTTP Auth | Optional username/password fields for WMS and WMTS editors. Credentials are injected into capabilities requests, tile/image loading (via fetch + blob URLs), and legend fetching. |
+>
+> ### Sync status
+> Last synced with upstream: `1142420` (2026-04-01)
+>
+> ---
+> *Everything below this line is the original upstream README.*
+
 > [!IMPORTANT]
 > From now on the panel builds from this repository and future releases are only compatible with Grafana versions `>= 12.3.0`. This is due to the migration actions needed to align the plugin with React 19 requirements, which introduces some breaking changes.
 > More information about the Grafana migration to React 19 can be found here: https://grafana.com/blog/react-19-is-coming-to-grafana-what-plugin-developers-need-to-know/

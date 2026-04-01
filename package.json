@@ -1,5 +1,5 @@
 {
-  "name": "felixrelleum-geomapwms-panel",
+  "name": "paleo-geomap-panel",
   "version": "2.0.1",
   "description": "",
   "scripts": {
@@ -12,8 +12,8 @@
     "lint": "eslint --cache .",
     "lint:fix": "npm run lint -- --fix  && prettier --write --list-different .",
     "server": "docker compose up --build",
-    "sign": "npx --yes @grafana/sign-plugin@latest --distDir ./felixrelleum-geomapwms-panel",
-    "validate": "npm run build && zip -qr felixrelleum-geomapwms-panel.zip felixrelleum-geomapwms-panel && npx --yes @grafana/plugin-validator@latest -config ./plugin-validator-config.yml -sourceCodeUri file://. felixrelleum-geomapwms-panel.zip; rm -r felixrelleum-geomapwms-panel.zip",
+    "sign": "npx --yes @grafana/sign-plugin@latest --distDir ./paleo-geomap-panel",
+    "validate": "npm run build && zip -qr paleo-geomap-panel.zip paleo-geomap-panel && npx --yes @grafana/plugin-validator@latest -config ./plugin-validator-config.yml -sourceCodeUri file://. paleo-geomap-panel.zip; rm -r paleo-geomap-panel.zip",
     "test:all": "jest --coverage",
     "test": "jest --watch --onlyChanged",
     "test:ci": "jest --passWithNoTests --maxWorkers 4",
@@ -28,7 +28,7 @@
       "tag": true
     }
   },
-  "author": "Felix Müller",
+  "author": "Paléo SIGMA",
   "license": "AGPL-3.0",
   "devDependencies": {
     "@babel/core": "^7.21.4",

@@ -50,7 +50,7 @@ export async function getEntries() {
 
   const plugins = await Promise.all(
     pluginsJson.map((pluginJson) => {
-      const folder = path.dirname(pluginJson);
+      const folder = path.dirname(pluginJson).replace(/\\/g, '/');
       return glob(`${folder}/module.{ts,tsx,js,jsx}`, { absolute: true });
     })
   );
